@@ -1,3 +1,12 @@
+
+/*
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
+*/
 pragma solidity 0.6.5;
 
 import "./lib/SafeMathInt.sol";
@@ -6,24 +15,24 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title uFragments ERC20 token
- * @dev This is part of an implementation of the uFragments Ideal Money protocol.
- *      uFragments is a normal ERC20 token, but its supply can be adjusted by splitting and
+ * @title BasixToken ERC20 token
+ * @dev This is part of an implementation of the BasixToken Ideal Money protocol.
+ *      BasixToken is a normal ERC20 token, but its supply can be adjusted by splitting and
  *      combining tokens proportionally across all wallets.
  *
- *      uFragment balances are internally represented with a hidden denomination, 'gons'.
+ *      BASIX balances are internally represented with a hidden denomination, 'grains'.
  *      We support splitting the currency in expansion and combining the currency on contraction by
- *      changing the exchange rate between the hidden 'gons' and the public 'fragments'.
+ *      changing the exchange rate between the hidden 'grains' and the public 'fragments'.
  */
-contract UFragments is ERC20, Ownable {
+contract BasixToken is ERC20, Ownable {
     // PLEASE READ BEFORE CHANGING ANY ACCOUNTING OR MATH
     // Anytime there is division, there is a risk of numerical instability from rounding errors. In
     // order to minimize this risk, we adhere to the following guidelines:
-    // 1) The conversion rate adopted is the number of gons that equals 1 fragment.
-    //    The inverse rate must not be used--TOTAL_GONS is always the numerator and _totalSupply is
-    //    always the denominator. (i.e. If you want to convert gons to fragments instead of
+    // 1) The conversion rate adopted is the number of grains that equals 1 fragment.
+    //    The inverse rate must not be used--TOTAL_GRAINS is always the numerator and _totalSupply is
+    //    always the denominator. (i.e. If you want to convert grains to fragments instead of
     //    multiplying by the inverse rate, you should divide by the normal rate)
-    // 2) Gon balances converted into Fragments are always rounded down (truncated).
+    // 2) Grain balances converted into Fragments are always rounded down (truncated).
     //
     // We make the following guarantees:
     // - If address 'A' transfers x Fragments to address 'B'. A's resulting public balance will
@@ -61,19 +70,19 @@ contract UFragments is ERC20, Ownable {
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 100000 * uint(10)**DECIMALS;
     uint256 private constant TRANSFER_FEE = 100; // 1%
 
-    // TOTAL_GONS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _gonsPerFragment is an integer.
+    // TOTAL_GRAINS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _grainsPerFragment is an integer.
     // Use the highest value that fits in a uint256 for max granularity.
-    uint256 private constant TOTAL_GONS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
+    uint256 private constant TOTAL_GRAINS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
 
-    // MAX_SUPPLY = maximum integer < (sqrt(4*TOTAL_GONS + 1) - 1) / 2
+    // MAX_SUPPLY = maximum integer < (sqrt(4*TOTAL_GRAINS + 1) - 1) / 2
     uint256 private constant MAX_SUPPLY = ~uint128(0);  // (2^128) - 1
 
     uint256 private _totalSupply;
-    uint256 private _gonsPerFragment;
-    mapping(address => uint256) private _gonBalances;
+    uint256 private _grainsPerFragment;
+    mapping(address => uint256) private _grainBalances;
     mapping(address => bool) _feeWhiteList;
 
-    // This is denominated in Fragments, because the gons-fragments conversion might change before
+    // This is denominated in Fragments, because the grains-fragments conversion might change before
     // it's fully paid.
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
@@ -84,13 +93,13 @@ contract UFragments is ERC20, Ownable {
         tokenPausedDeprecated = false;
 
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
-        _gonsPerFragment = TOTAL_GONS.div(_totalSupply);
+        _grainsPerFragment = TOTAL_GRAINS.div(_totalSupply);
 
         uint256 poolVal = 75000 * (10 ** DECIMALS);
-        uint256 poolGons = poolVal.mul(_gonsPerFragment);
+        uint256 poolGrains = poolVal.mul(_grainsPerFragment);
 
-        _gonBalances[owner_] = TOTAL_GONS.sub(poolGons);
-        _gonBalances[pool_] = poolGons;
+        _grainBalances[owner_] = TOTAL_GRAINS.sub(poolGrains);
+        _grainBalances[pool_] = poolGrains;
 
         addToWhitelist(pool_);
 
@@ -146,18 +155,18 @@ contract UFragments is ERC20, Ownable {
             _totalSupply = MAX_SUPPLY;
         }
 
-        _gonsPerFragment = TOTAL_GONS.div(_totalSupply);
+        _grainsPerFragment = TOTAL_GRAINS.div(_totalSupply);
 
-        // From this point forward, _gonsPerFragment is taken as the source of truth.
-        // We recalculate a new _totalSupply to be in agreement with the _gonsPerFragment
+        // From this point forward, _grainsPerFragment is taken as the source of truth.
+        // We recalculate a new _totalSupply to be in agreement with the _grainsPerFragment
         // conversion rate.
         // This means our applied supplyDelta can deviate from the requested supplyDelta,
-        // but this deviation is guaranteed to be < (_totalSupply^2)/(TOTAL_GONS - _totalSupply).
+        // but this deviation is guaranteed to be < (_totalSupply^2)/(TOTAL_GRAINS - _totalSupply).
         //
         // In the case of _totalSupply <= MAX_UINT128 (our current supply cap), this
         // deviation is guaranteed to be < 1, so we can omit this step. If the supply cap is
         // ever increased, it must be re-included.
-        // _totalSupply = TOTAL_GONS.div(_gonsPerFragment)
+        // _totalSupply = TOTAL_GRAINS.div(_grainsPerFragment)
 
         emit LogRebase(epoch, _totalSupply);
         return _totalSupply;
@@ -168,7 +177,7 @@ contract UFragments is ERC20, Ownable {
      * @return The balance of the specified address.
      */
     function balanceOf(address who) public view override returns (uint256) {
-        return _gonBalances[who].div(_gonsPerFragment);
+        return _grainBalances[who].div(_grainsPerFragment);
     }
 
     /**
@@ -184,22 +193,22 @@ contract UFragments is ERC20, Ownable {
         returns (bool)
     {
         if (_feeWhiteList[to]) {
-            uint256 gonValue = value.mul(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
 
-            _gonBalances[msg.sender] = _gonBalances[msg.sender].sub(gonValue);
-            _gonBalances[to] = _gonBalances[to].add(gonValue);
+            _grainBalances[msg.sender] = _grainBalances[msg.sender].sub(grainValue);
+            _grainBalances[to] = _grainBalances[to].add(grainValue);
             emit Transfer(msg.sender, to, value);
             return true;
         } else {
-            uint256 gonValue = value.mul(_gonsPerFragment);
-            uint256 gonFee = gonValue.div(10000).mul(TRANSFER_FEE);
-            uint256 newGonsValue = gonValue - gonFee;
-            uint256 newValue = newGonsValue.div(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
+            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 newGrainsValue = grainValue - grainFee;
+            uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
-            _burn(msg.sender, gonFee);
+            _burn(msg.sender, grainFee);
 
-            _gonBalances[msg.sender] = _gonBalances[msg.sender].sub(newGonsValue);
-            _gonBalances[to] = _gonBalances[to].add(newGonsValue);
+            _grainBalances[msg.sender] = _grainBalances[msg.sender].sub(newGrainsValue);
+            _grainBalances[to] = _grainBalances[to].add(newGrainsValue);
             emit Transfer(msg.sender, to, newValue);
             return true;
         }
@@ -235,35 +244,35 @@ contract UFragments is ERC20, Ownable {
         _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
 
         if (_feeWhiteList[from] || _feeWhiteList[to]) {
-            uint256 gonValue = value.mul(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
 
-            _gonBalances[from] = _gonBalances[from].sub(gonValue);
-            _gonBalances[to] = _gonBalances[to].add(gonValue);
+            _grainBalances[from] = _grainBalances[from].sub(grainValue);
+            _grainBalances[to] = _grainBalances[to].add(grainValue);
             emit Transfer(from, to, value);
 
             return true;
         } else {
-            uint256 gonValue = value.mul(_gonsPerFragment);
-            uint256 gonFee = gonValue.div(10000).mul(TRANSFER_FEE);
-            uint256 newGonsValue = gonValue - gonFee;
-            uint256 newValue = newGonsValue.div(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
+            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 newGrainsValue = grainValue - grainFee;
+            uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
-            _burn(from, gonFee);
+            _burn(from, grainFee);
 
-            _gonBalances[from] = _gonBalances[from].sub(newGonsValue);
-            _gonBalances[to] = _gonBalances[to].add(newGonsValue);
+            _grainBalances[from] = _grainBalances[from].sub(newGrainsValue);
+            _grainBalances[to] = _grainBalances[to].add(newGrainsValue);
             emit Transfer(from, to, newValue);
 
             return true;
         }
     }
 
-    function _burn(address account, uint256 gonsAmount) internal override {
+    function _burn(address account, uint256 grainsAmount) internal override {
         require(account != address(0), "ERC20: burn from the zero address");
 
-        _gonBalances[account] = _gonBalances[account].sub(gonsAmount, "ERC20: burn amount exceeds balance");
+        _grainBalances[account] = _grainBalances[account].sub(grainsAmount, "ERC20: burn amount exceeds balance");
         
-        uint256 amount = gonsAmount.div(_gonsPerFragment);
+        uint256 amount = grainsAmount.div(_grainsPerFragment);
         
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);

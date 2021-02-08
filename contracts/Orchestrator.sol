@@ -1,7 +1,15 @@
+/*
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
+*/
 pragma solidity 0.6.5;
 
 import "./Interfaces.sol";
-import "./UFragmentsPolicy.sol";
+import "./BasixProtocol.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -24,14 +32,13 @@ contract Orchestrator is Ownable {
     // Stable ordering is not guaranteed.
     Transaction[] public transactions;
 
-    UFragmentsPolicy public policy;
-    YearnRewardsI public pool;
     ERC20 public basix;
-    uint256 public rebaseRequiredSupply;
     address public deployer;
+    YearnRewardsI public pool;
     UniV2PairI public uniSyncs;
+    BasixProtocol public policy;
+    uint256 public rebaseRequiredSupply;
 
-    uint256 constant SYNC_GAS = 50000;
     address constant uniFactory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     // https://uniswap.org/docs/v2/smart-contract-integration/getting-pair-addresses/
@@ -51,13 +58,13 @@ contract Orchestrator is Ownable {
         address policy_,
         address pool_,
         address basix_,
-        address synth_sUSD_,
+        address sUSD_,
         uint256 rebaseRequiredSupply_
     ) public {
-        policy      = UFragmentsPolicy(policy_);
+        policy      = BasixProtocol(policy_);
         pool        = YearnRewardsI(pool_);
         basix       = ERC20(basix_);
-        uniSyncs    = genUniAddr(basix_, synth_sUSD_);
+        uniSyncs    = genUniAddr(basix_, sUSD_);
 
         rebaseRequiredSupply = rebaseRequiredSupply_;
     }
@@ -79,13 +86,6 @@ contract Orchestrator is Ownable {
         require(rewardsDistributed >= rebaseRequiredSupply || block.timestamp >= pool.starttime(), "Rebase not ready"); // TODO: Add + 1 days ???
 
         policy.rebase();
-
-        // Swiper no swiping.
-        // using low level call to prevent reverts on remote error/non-existence
-        // address(uniSyncs[i]).call.gas(SYNC_GAS)(uniSyncs[i].sync.selector);
-        // address(uniSyncs[i]).call{gas: SYNC_GAS}(
-        //     abi.encode(uniSyncs[i].sync.selector)
-        // );
 
         uniSyncs.sync();
     }

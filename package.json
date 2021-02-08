@@ -7,11 +7,11 @@
   },
   "scripts": {
     "test": "truffle test",
-    "flatten-all": "del-cli ./flatten && mkdir \\flatten && npm run flatten-oracle && npm run flatten-orchestrator && npm run flatten-ufragments && npm run flatten-ufragmentspolicy",
+    "flatten-all": "del-cli ./flatten && mkdir \\flatten && npm run flatten-oracle && npm run flatten-orchestrator && npm run flatten-basixtoken && npm run flatten-basixprotocol",
     "flatten-oracle": "truffle-flattener contracts/Oracle.sol > flatten/Oracle.sol",
     "flatten-orchestrator": "truffle-flattener contracts/Orchestrator.sol > flatten/Orchestrator.sol",
-    "flatten-ufragments": "truffle-flattener contracts/UFragments.sol > flatten/UFragments.sol",
-    "flatten-ufragmentspolicy": "truffle-flattener contracts/UFragmentsPolicy.sol > flatten/UFragmentsPolicy.sol"
+    "flatten-basixtoken": "truffle-flattener contracts/BasixToken.sol > flatten/BasixToken.sol",
+    "flatten-basixprotocol": "truffle-flattener contracts/BasixProtocol.sol > flatten/BasixProtocol.sol"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "@openzeppelin/contracts": "^3.3.0",
     "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-core": "^1.0.1",
+    "truffle": "^5.1.64",
     "zeppelin-solidity": "^1.12.0"
   },
   "description": ""

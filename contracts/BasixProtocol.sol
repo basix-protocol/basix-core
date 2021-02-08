@@ -1,6 +1,14 @@
+/*
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
+*/
 pragma solidity 0.6.5;
 
-import "./UFragments.sol";
+import "./BasixToken.sol";
 import "./lib/IOracle.sol";
 import "./lib/SafeMathInt.sol";
 import "./lib/UInt256Lib.sol";
@@ -8,15 +16,15 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title uFragments Monetary Supply Policy
- * @dev This is an implementation of the uFragments Ideal Money protocol.
- *      uFragments operates symmetrically on expansion and contraction. It will both split and
+ * @title BasixToken Monetary Supply Policy
+ * @dev This is an implementation of the BasixToken Ideal Money protocol.
+ *      BasixToken operates symmetrically on expansion and contraction. It will both split and
  *      combine coins to maintain a stable unit price.
  *
- *      This component regulates the token supply of the uFragments ERC20 token in response to
+ *      This component regulates the token supply of the BasixToken ERC20 token in response to
  *      market oracles.
  */
-contract UFragmentsPolicy is Ownable {
+contract BasixProtocol is Ownable {
     using SafeMath for uint256;
     using SafeMathInt for int256;
     using UInt256Lib for uint256;
@@ -28,7 +36,7 @@ contract UFragmentsPolicy is Ownable {
         uint256 timestampSec
     );
 
-    UFragments public uFrags;
+    BasixToken public fragments;
 
     // Market oracle provides the token/USD exchange rate as an 18 decimal fixed point number.
     // (eg) An oracle value of 1.5e18 it would mean 1 Ample is trading for $1.50.
@@ -80,18 +88,18 @@ contract UFragmentsPolicy is Ownable {
         _;
     }
 
-    constructor (UFragments uFrags_) public {
+    constructor (BasixToken fragments_) public {
         // deviationThreshold = 0.05e18 = 5e16
         deviationThreshold = 5 * 10 ** (DECIMALS-2);
 
         rebaseLag = 10;
         minRebaseTimeIntervalSec = 1 days;
-        rebaseWindowOffsetSec = 72000;  // 8PM UTC
-        rebaseWindowLengthSec = 15 minutes;
+        rebaseWindowOffsetSec = 32400;  // 9AM UTC
+        rebaseWindowLengthSec = 60 minutes;
         lastRebaseTimestampSec = 0;
         epoch = 0;
 
-        uFrags = uFrags_;
+        fragments = fragments_;
     }
 
     /**
@@ -130,11 +138,11 @@ contract UFragmentsPolicy is Ownable {
         // Apply the Dampening factor.
         supplyDelta = supplyDelta.div(rebaseLag.toInt256Safe());
 
-        if (supplyDelta > 0 && uFrags.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
-            supplyDelta = (MAX_SUPPLY.sub(uFrags.totalSupply())).toInt256Safe();
+        if (supplyDelta > 0 && fragments.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
+            supplyDelta = (MAX_SUPPLY.sub(fragments.totalSupply())).toInt256Safe();
         }
 
-        uint256 supplyAfterRebase = uFrags.rebase(epoch, supplyDelta);
+        uint256 supplyAfterRebase = fragments.rebase(epoch, supplyDelta);
         assert(supplyAfterRebase <= MAX_SUPPLY);
         emit LogRebase(epoch, exchangeRate, supplyDelta, now);
     }
@@ -245,7 +253,7 @@ contract UFragmentsPolicy is Ownable {
 
         // supplyDelta = totalSupply * (rate - targetRate) / targetRate
         int256 targetRateSigned = targetRate.toInt256Safe();
-        return uFrags.totalSupply().toInt256Safe()
+        return fragments.totalSupply().toInt256Safe()
             .mul(rate.toInt256Safe().sub(targetRateSigned))
             .div(targetRateSigned);
     }

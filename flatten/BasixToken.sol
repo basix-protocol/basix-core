@@ -732,8 +732,16 @@ abstract contract Ownable is Context {
     }
 }
 
-// File: contracts/UFragments.sol
+// File: contracts/BasixToken.sol
 
+/*
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
+*/
 pragma solidity 0.6.5;
 
 
@@ -741,24 +749,24 @@ pragma solidity 0.6.5;
 
 
 /**
- * @title uFragments ERC20 token
- * @dev This is part of an implementation of the uFragments Ideal Money protocol.
- *      uFragments is a normal ERC20 token, but its supply can be adjusted by splitting and
+ * @title BasixToken ERC20 token
+ * @dev This is part of an implementation of the BasixToken Ideal Money protocol.
+ *      BasixToken is a normal ERC20 token, but its supply can be adjusted by splitting and
  *      combining tokens proportionally across all wallets.
  *
- *      uFragment balances are internally represented with a hidden denomination, 'gons'.
+ *      BASIX balances are internally represented with a hidden denomination, 'grains'.
  *      We support splitting the currency in expansion and combining the currency on contraction by
- *      changing the exchange rate between the hidden 'gons' and the public 'fragments'.
+ *      changing the exchange rate between the hidden 'grains' and the public 'fragments'.
  */
-contract UFragments is ERC20, Ownable {
+contract BasixToken is ERC20, Ownable {
     // PLEASE READ BEFORE CHANGING ANY ACCOUNTING OR MATH
     // Anytime there is division, there is a risk of numerical instability from rounding errors. In
     // order to minimize this risk, we adhere to the following guidelines:
-    // 1) The conversion rate adopted is the number of gons that equals 1 fragment.
-    //    The inverse rate must not be used--TOTAL_GONS is always the numerator and _totalSupply is
-    //    always the denominator. (i.e. If you want to convert gons to fragments instead of
+    // 1) The conversion rate adopted is the number of grains that equals 1 fragment.
+    //    The inverse rate must not be used--TOTAL_GRAINS is always the numerator and _totalSupply is
+    //    always the denominator. (i.e. If you want to convert grains to fragments instead of
     //    multiplying by the inverse rate, you should divide by the normal rate)
-    // 2) Gon balances converted into Fragments are always rounded down (truncated).
+    // 2) Grain balances converted into Fragments are always rounded down (truncated).
     //
     // We make the following guarantees:
     // - If address 'A' transfers x Fragments to address 'B'. A's resulting public balance will
@@ -796,19 +804,19 @@ contract UFragments is ERC20, Ownable {
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 100000 * uint(10)**DECIMALS;
     uint256 private constant TRANSFER_FEE = 100; // 1%
 
-    // TOTAL_GONS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _gonsPerFragment is an integer.
+    // TOTAL_GRAINS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _grainsPerFragment is an integer.
     // Use the highest value that fits in a uint256 for max granularity.
-    uint256 private constant TOTAL_GONS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
+    uint256 private constant TOTAL_GRAINS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
 
-    // MAX_SUPPLY = maximum integer < (sqrt(4*TOTAL_GONS + 1) - 1) / 2
+    // MAX_SUPPLY = maximum integer < (sqrt(4*TOTAL_GRAINS + 1) - 1) / 2
     uint256 private constant MAX_SUPPLY = ~uint128(0);  // (2^128) - 1
 
     uint256 private _totalSupply;
-    uint256 private _gonsPerFragment;
-    mapping(address => uint256) private _gonBalances;
+    uint256 private _grainsPerFragment;
+    mapping(address => uint256) private _grainBalances;
     mapping(address => bool) _feeWhiteList;
 
-    // This is denominated in Fragments, because the gons-fragments conversion might change before
+    // This is denominated in Fragments, because the grains-fragments conversion might change before
     // it's fully paid.
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
@@ -819,13 +827,13 @@ contract UFragments is ERC20, Ownable {
         tokenPausedDeprecated = false;
 
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
-        _gonsPerFragment = TOTAL_GONS.div(_totalSupply);
+        _grainsPerFragment = TOTAL_GRAINS.div(_totalSupply);
 
         uint256 poolVal = 75000 * (10 ** DECIMALS);
-        uint256 poolGons = poolVal.mul(_gonsPerFragment);
+        uint256 poolGrains = poolVal.mul(_grainsPerFragment);
 
-        _gonBalances[owner_] = TOTAL_GONS.sub(poolGons);
-        _gonBalances[pool_] = poolGons;
+        _grainBalances[owner_] = TOTAL_GRAINS.sub(poolGrains);
+        _grainBalances[pool_] = poolGrains;
 
         addToWhitelist(pool_);
 
@@ -881,18 +889,18 @@ contract UFragments is ERC20, Ownable {
             _totalSupply = MAX_SUPPLY;
         }
 
-        _gonsPerFragment = TOTAL_GONS.div(_totalSupply);
+        _grainsPerFragment = TOTAL_GRAINS.div(_totalSupply);
 
-        // From this point forward, _gonsPerFragment is taken as the source of truth.
-        // We recalculate a new _totalSupply to be in agreement with the _gonsPerFragment
+        // From this point forward, _grainsPerFragment is taken as the source of truth.
+        // We recalculate a new _totalSupply to be in agreement with the _grainsPerFragment
         // conversion rate.
         // This means our applied supplyDelta can deviate from the requested supplyDelta,
-        // but this deviation is guaranteed to be < (_totalSupply^2)/(TOTAL_GONS - _totalSupply).
+        // but this deviation is guaranteed to be < (_totalSupply^2)/(TOTAL_GRAINS - _totalSupply).
         //
         // In the case of _totalSupply <= MAX_UINT128 (our current supply cap), this
         // deviation is guaranteed to be < 1, so we can omit this step. If the supply cap is
         // ever increased, it must be re-included.
-        // _totalSupply = TOTAL_GONS.div(_gonsPerFragment)
+        // _totalSupply = TOTAL_GRAINS.div(_grainsPerFragment)
 
         emit LogRebase(epoch, _totalSupply);
         return _totalSupply;
@@ -903,7 +911,7 @@ contract UFragments is ERC20, Ownable {
      * @return The balance of the specified address.
      */
     function balanceOf(address who) public view override returns (uint256) {
-        return _gonBalances[who].div(_gonsPerFragment);
+        return _grainBalances[who].div(_grainsPerFragment);
     }
 
     /**
@@ -919,22 +927,22 @@ contract UFragments is ERC20, Ownable {
         returns (bool)
     {
         if (_feeWhiteList[to]) {
-            uint256 gonValue = value.mul(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
 
-            _gonBalances[msg.sender] = _gonBalances[msg.sender].sub(gonValue);
-            _gonBalances[to] = _gonBalances[to].add(gonValue);
+            _grainBalances[msg.sender] = _grainBalances[msg.sender].sub(grainValue);
+            _grainBalances[to] = _grainBalances[to].add(grainValue);
             emit Transfer(msg.sender, to, value);
             return true;
         } else {
-            uint256 gonValue = value.mul(_gonsPerFragment);
-            uint256 gonFee = gonValue.div(10000).mul(TRANSFER_FEE);
-            uint256 newGonsValue = gonValue - gonFee;
-            uint256 newValue = newGonsValue.div(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
+            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 newGrainsValue = grainValue - grainFee;
+            uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
-            _burn(msg.sender, gonFee);
+            _burn(msg.sender, grainFee);
 
-            _gonBalances[msg.sender] = _gonBalances[msg.sender].sub(newGonsValue);
-            _gonBalances[to] = _gonBalances[to].add(newGonsValue);
+            _grainBalances[msg.sender] = _grainBalances[msg.sender].sub(newGrainsValue);
+            _grainBalances[to] = _grainBalances[to].add(newGrainsValue);
             emit Transfer(msg.sender, to, newValue);
             return true;
         }
@@ -970,35 +978,35 @@ contract UFragments is ERC20, Ownable {
         _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
 
         if (_feeWhiteList[from] || _feeWhiteList[to]) {
-            uint256 gonValue = value.mul(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
 
-            _gonBalances[from] = _gonBalances[from].sub(gonValue);
-            _gonBalances[to] = _gonBalances[to].add(gonValue);
+            _grainBalances[from] = _grainBalances[from].sub(grainValue);
+            _grainBalances[to] = _grainBalances[to].add(grainValue);
             emit Transfer(from, to, value);
 
             return true;
         } else {
-            uint256 gonValue = value.mul(_gonsPerFragment);
-            uint256 gonFee = gonValue.div(10000).mul(TRANSFER_FEE);
-            uint256 newGonsValue = gonValue - gonFee;
-            uint256 newValue = newGonsValue.div(_gonsPerFragment);
+            uint256 grainValue = value.mul(_grainsPerFragment);
+            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 newGrainsValue = grainValue - grainFee;
+            uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
-            _burn(from, gonFee);
+            _burn(from, grainFee);
 
-            _gonBalances[from] = _gonBalances[from].sub(newGonsValue);
-            _gonBalances[to] = _gonBalances[to].add(newGonsValue);
+            _grainBalances[from] = _grainBalances[from].sub(newGrainsValue);
+            _grainBalances[to] = _grainBalances[to].add(newGrainsValue);
             emit Transfer(from, to, newValue);
 
             return true;
         }
     }
 
-    function _burn(address account, uint256 gonsAmount) internal override {
+    function _burn(address account, uint256 grainsAmount) internal override {
         require(account != address(0), "ERC20: burn from the zero address");
 
-        _gonBalances[account] = _gonBalances[account].sub(gonsAmount, "ERC20: burn amount exceeds balance");
+        _grainBalances[account] = _grainBalances[account].sub(grainsAmount, "ERC20: burn amount exceeds balance");
         
-        uint256 amount = gonsAmount.div(_gonsPerFragment);
+        uint256 amount = grainsAmount.div(_grainsPerFragment);
         
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
@@ -1062,304 +1070,5 @@ contract UFragments is ERC20, Ownable {
         }
         emit Approval(msg.sender, spender, _allowedFragments[msg.sender][spender]);
         return true;
-    }
-}
-
-// File: contracts/lib/IOracle.sol
-
-pragma solidity 0.6.5;
-
-interface IOracle {
-    function getData() external returns (uint256, bool);
-}
-
-// File: contracts/lib/UInt256Lib.sol
-
-pragma solidity 0.6.5;
-
-/**
- * @title Various utilities useful for uint256.
- */
-library UInt256Lib {
-    uint256 private constant MAX_INT256 = ~(uint256(1) << 255);
-
-    /**
-     * @dev Safely converts a uint256 to an int256.
-     */
-    function toInt256Safe(uint256 a) internal pure returns (int256) {
-        require(a <= MAX_INT256);
-        return int256(a);
-    }
-}
-
-// File: contracts/UFragmentsPolicy.sol
-
-pragma solidity 0.6.5;
-
-
-
-
-
-
-
-/**
- * @title uFragments Monetary Supply Policy
- * @dev This is an implementation of the uFragments Ideal Money protocol.
- *      uFragments operates symmetrically on expansion and contraction. It will both split and
- *      combine coins to maintain a stable unit price.
- *
- *      This component regulates the token supply of the uFragments ERC20 token in response to
- *      market oracles.
- */
-contract UFragmentsPolicy is Ownable {
-    using SafeMath for uint256;
-    using SafeMathInt for int256;
-    using UInt256Lib for uint256;
-
-    event LogRebase(
-        uint256 indexed epoch,
-        uint256 exchangeRate,
-        int256 requestedSupplyAdjustment,
-        uint256 timestampSec
-    );
-
-    UFragments public uFrags;
-
-    // Market oracle provides the token/USD exchange rate as an 18 decimal fixed point number.
-    // (eg) An oracle value of 1.5e18 it would mean 1 Ample is trading for $1.50.
-    IOracle public marketOracle;
-
-    // CPI value at the time of launch, as an 18 decimal fixed point number.
-    uint256 private baseCpi;
-
-    // If the current exchange rate is within this fractional distance from the target, no supply
-    // update is performed. Fixed point number--same format as the rate.
-    // (ie) abs(rate - targetRate) / targetRate < deviationThreshold, then no supply change.
-    // DECIMALS Fixed point number.
-    uint256 public deviationThreshold;
-
-    // The rebase lag parameter, used to dampen the applied supply adjustment by 1 / rebaseLag
-    // Check setRebaseLag comments for more details.
-    // Natural number, no decimal places.
-    uint256 public rebaseLag;
-
-    // More than this much time must pass between rebase operations.
-    uint256 public minRebaseTimeIntervalSec;
-
-    // Block timestamp of last rebase operation
-    uint256 public lastRebaseTimestampSec;
-
-    // The rebase window begins this many seconds into the minRebaseTimeInterval period.
-    // For example if minRebaseTimeInterval is 24hrs, it represents the time of day in seconds.
-    uint256 public rebaseWindowOffsetSec;
-
-    // The length of the time window where a rebase operation is allowed to execute, in seconds.
-    uint256 public rebaseWindowLengthSec;
-
-    // The number of rebase cycles since inception
-    uint256 public epoch;
-
-    uint256 private constant DECIMALS = 18;
-
-    // Due to the expression in computeSupplyDelta(), MAX_RATE * MAX_SUPPLY must fit into an int256.
-    // Both are 18 decimals fixed point numbers.
-    uint256 private constant MAX_RATE = 10**6 * 10**DECIMALS;
-    // MAX_SUPPLY = MAX_INT256 / MAX_RATE
-    uint256 private constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
-
-    // This module orchestrates the rebase execution and downstream notification.
-    address public orchestrator;
-
-    modifier onlyOrchestrator() {
-        require(msg.sender == orchestrator, "Only Orchestrator");
-        _;
-    }
-
-    constructor (UFragments uFrags_) public {
-        // deviationThreshold = 0.05e18 = 5e16
-        deviationThreshold = 5 * 10 ** (DECIMALS-2);
-
-        rebaseLag = 10;
-        minRebaseTimeIntervalSec = 1 days;
-        rebaseWindowOffsetSec = 72000;  // 8PM UTC
-        rebaseWindowLengthSec = 15 minutes;
-        lastRebaseTimestampSec = 0;
-        epoch = 0;
-
-        uFrags = uFrags_;
-    }
-
-    /**
-     * @notice Initiates a new rebase operation, provided the minimum time period has elapsed.
-     *
-     * @dev The supply adjustment equals (_totalSupply * DeviationFromTargetRate) / rebaseLag
-     *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
-     *      and targetRate is CpiOracleRate / baseCpi
-     */
-    function rebase() external onlyOrchestrator {
-        require(inRebaseWindow(), "Not in rebase window");
-
-        // This comparison also ensures there is no reentrancy.
-        require(lastRebaseTimestampSec.add(minRebaseTimeIntervalSec) < now, "No reentrancy");
-
-        // Snap the rebase time to the start of this window.
-        lastRebaseTimestampSec = now.sub(
-            now.mod(minRebaseTimeIntervalSec)
-        ).add(rebaseWindowOffsetSec);
-
-        epoch = epoch.add(1);
-
-        uint256 targetRate = 10 ** DECIMALS;
-
-        uint256 exchangeRate;
-        bool rateValid;
-        (exchangeRate, rateValid) = marketOracle.getData();
-        require(rateValid, "Not valid rate");
-
-        if (exchangeRate > MAX_RATE) {
-            exchangeRate = MAX_RATE;
-        }
-
-        int256 supplyDelta = computeSupplyDelta(exchangeRate, targetRate);
-
-        // Apply the Dampening factor.
-        supplyDelta = supplyDelta.div(rebaseLag.toInt256Safe());
-
-        if (supplyDelta > 0 && uFrags.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
-            supplyDelta = (MAX_SUPPLY.sub(uFrags.totalSupply())).toInt256Safe();
-        }
-
-        uint256 supplyAfterRebase = uFrags.rebase(epoch, supplyDelta);
-        assert(supplyAfterRebase <= MAX_SUPPLY);
-        emit LogRebase(epoch, exchangeRate, supplyDelta, now);
-    }
-
-    /**
-     * @notice Sets the reference to the market oracle.
-     * @param marketOracle_ The address of the market oracle contract.
-     */
-    function setMarketOracle(IOracle marketOracle_)
-        external
-        onlyOwner
-    {
-        // can be set only once
-        require(address(marketOracle) == address(0), "Not valid oracle address");
-        marketOracle = marketOracle_;
-    }
-
-    /**
-     * @notice Sets the reference to the orchestrator.
-     * @param orchestrator_ The address of the orchestrator contract.
-     */
-    function setOrchestrator(address orchestrator_)
-        external
-        onlyOwner
-    {
-        orchestrator = orchestrator_;
-    }
-
-    /**
-     * @notice Sets the deviation threshold fraction. If the exchange rate given by the market
-     *         oracle is within this fractional distance from the targetRate, then no supply
-     *         modifications are made. DECIMALS fixed point number.
-     * @param deviationThreshold_ The new exchange rate threshold fraction.
-     */
-    function setDeviationThreshold(uint256 deviationThreshold_)
-        external
-        onlyOwner
-    {
-        deviationThreshold = deviationThreshold_;
-    }
-
-    /**
-     * @notice Sets the rebase lag parameter.
-               It is used to dampen the applied supply adjustment by 1 / rebaseLag
-               If the rebase lag R, equals 1, the smallest value for R, then the full supply
-               correction is applied on each rebase cycle.
-               If it is greater than 1, then a correction of 1/R of is applied on each rebase.
-     * @param rebaseLag_ The new rebase lag parameter.
-     */
-    function setRebaseLag(uint256 rebaseLag_)
-        external
-        onlyOwner
-    {
-        require(rebaseLag_ > 0, "Not valid rebase lag");
-        rebaseLag = rebaseLag_;
-    }
-
-    /**
-     * @notice Sets the parameters which control the timing and frequency of
-     *         rebase operations.
-     *         a) the minimum time period that must elapse between rebase cycles.
-     *         b) the rebase window offset parameter.
-     *         c) the rebase window length parameter.
-     * @param minRebaseTimeIntervalSec_ More than this much time must pass between rebase
-     *        operations, in seconds.
-     * @param rebaseWindowOffsetSec_ The number of seconds from the beginning of
-              the rebase interval, where the rebase window begins.
-     * @param rebaseWindowLengthSec_ The length of the rebase window in seconds.
-     */
-    function setRebaseTimingParameters(
-        uint256 minRebaseTimeIntervalSec_,
-        uint256 rebaseWindowOffsetSec_,
-        uint256 rebaseWindowLengthSec_)
-        external
-        onlyOwner
-    {
-        require(minRebaseTimeIntervalSec_ > 0, "Not valid min rebase time interval seconds");
-        require(rebaseWindowOffsetSec_ < minRebaseTimeIntervalSec_, "Not valid min rebase time interval seconds");
-
-        minRebaseTimeIntervalSec = minRebaseTimeIntervalSec_;
-        rebaseWindowOffsetSec = rebaseWindowOffsetSec_;
-        rebaseWindowLengthSec = rebaseWindowLengthSec_;
-    }
-
-    /**
-     * @return If the latest block timestamp is within the rebase time window it, returns true.
-     *         Otherwise, returns false.
-     */
-    function inRebaseWindow() public view returns (bool) {
-        return (
-            now.mod(minRebaseTimeIntervalSec) >= rebaseWindowOffsetSec &&
-            now.mod(minRebaseTimeIntervalSec) < (rebaseWindowOffsetSec.add(rebaseWindowLengthSec))
-        );
-    }
-
-    /**
-     * @return Computes the total supply adjustment in response to the exchange rate
-     *         and the targetRate.
-     */
-    function computeSupplyDelta(uint256 rate, uint256 targetRate)
-        private
-        view
-        returns (int256)
-    {
-        if (withinDeviationThreshold(rate, targetRate)) {
-            return 0;
-        }
-
-        // supplyDelta = totalSupply * (rate - targetRate) / targetRate
-        int256 targetRateSigned = targetRate.toInt256Safe();
-        return uFrags.totalSupply().toInt256Safe()
-            .mul(rate.toInt256Safe().sub(targetRateSigned))
-            .div(targetRateSigned);
-    }
-    
-    /**
-     * @param rate The current exchange rate, an 18 decimal fixed point number.
-     * @param targetRate The target exchange rate, an 18 decimal fixed point number.
-     * @return If the rate is within the deviation threshold from the target rate, returns true.
-     *         Otherwise, returns false.
-     */
-    function withinDeviationThreshold(uint256 rate, uint256 targetRate)
-        private
-        view
-        returns (bool)
-    {
-        uint256 absoluteDeviationThreshold = targetRate.mul(deviationThreshold)
-            .div(10 ** DECIMALS);
-
-        return (rate >= targetRate && rate.sub(targetRate) < absoluteDeviationThreshold)
-            || (rate < targetRate && targetRate.sub(rate) < absoluteDeviationThreshold);
     }
 }

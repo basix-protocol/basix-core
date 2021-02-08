@@ -1,5 +1,12 @@
+/*
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
+*/
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.6.5;
 
 // Some code reproduced from
@@ -73,14 +80,14 @@ contract OracleSimple {
     }
 }
 
-interface UFragmentsI {
+interface BasixTokenI {
     function monetaryPolicy() external view returns (address);
 }
 
-contract BASIXOracle is Ownable, OracleSimple, IOracle {
+contract BasixOracle is Ownable, OracleSimple, IOracle {
 
-    uint256 constant SCALE = 10 ** 18;
     address basix;
+    uint256 constant SCALE = 10 ** 18;
     address constant uniFactory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     constructor(address basix_, address susd_) public OracleSimple(uniFactory, basix_, susd_) {
@@ -94,7 +101,7 @@ contract BASIXOracle is Ownable, OracleSimple, IOracle {
     }
 
     function getData() override external returns (uint256, bool) {
-        require(msg.sender == UFragmentsI(basix).monetaryPolicy());
+        require(msg.sender == BasixTokenI(basix).monetaryPolicy());
         update();
         uint256 price = consult(basix, SCALE); // will return 1 BASIX in sUSD
 

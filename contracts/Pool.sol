@@ -1,9 +1,10 @@
 /*
-   ____            __   __        __   _
-  / __/__ __ ___  / /_ / /  ___  / /_ (_)__ __
- _\ \ / // // _ \/ __// _ \/ -_)/ __// / \ \ /
-/___/ \_, //_//_/\__//_//_/\__/ \__//_/ /_\_\
-     /___/
+     ___    _____  ___    _  _    _ 
+    (  _`\ (  _  )(  _`\ (_)( )  ( )
+    | (_) )| (_) || (_(_)| |`\`\/'/'
+    |  _ <'|  _  |`\__ \ | |  >  <  
+    | (_) )| | | |( )_) || | /'/\`\ 
+    (____/'(_) (_)`\____)(_)(_)  (_)
 
 * Synthetix: YFIRewards.sol
 *
@@ -37,7 +38,7 @@
 
 // File: @openzeppelin/contracts/math/Math.sol
 
-pragma solidity ^0.6.5;
+pragma solidity 0.6.5;
 
 /**
  * @dev Standard math utilities missing in the Solidity language.
@@ -266,7 +267,6 @@ pragma solidity 0.6.5;
  * specific functions.
  *
  * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
 contract Ownable is Context {
@@ -692,7 +692,7 @@ contract LPTokenWrapper is Initializable {
     }
 }
 
-contract BASIXPool is LPTokenWrapper, IRewardDistributionRecipient {
+contract BasixPool is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public basix;
     uint256 public duration;
 
