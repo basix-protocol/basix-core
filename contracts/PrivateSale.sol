@@ -6,7 +6,7 @@
     | (_) )| | | |( )_) || | /'/\`\ 
     (____/'(_) (_)`\____)(_)(_)  (_)
 */
-pragma solidity 0.6.4;
+pragma solidity 0.6.5;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
@@ -37,22 +37,17 @@ contract BasixPrivateSale is ReentrancyGuard, Ownable {
     uint256 public totalCollected;
     uint256 totalSold;
     bool claimEnabled = false;
-    uint256 claimWaitTime = 60 days;
+    uint256 claimWaitTime = 30 days;
     uint256 start;
 
 
-    /**
-    30000000000000000003 BASX for sale
-    30000000003000000000
-    Buy price: 333333333333333 wei | 0,0003333333333 eth
-    */
     constructor(
         IERC20 _token,
         address payable _fundingAddress
     ) public {
-        minimalGoal = 50000000000000000000;
-        hardCap = 100000000000000000000;
-        buyPrice = 333333333333333;
+        minimalGoal = 50000000000000000000; // 50
+        hardCap = 100000000000000000000; // 100
+        buyPrice = 000454545454545454;
         crowdsaleToken = _token;
         fundingAddress = _fundingAddress;
         start = getTime();

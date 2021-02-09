@@ -53,17 +53,17 @@ async function deployTestnet(deployer, accounts) {
   const basixProtocol = await BasixProtocol.at(BasixProtocol.address);
   await basixProtocol.setMarketOracle(BasixOracle.address);
   await basixProtocol.setOrchestrator(Orchestrator.address);
-  await basixProtocol.setRebaseTimingParameters(60, 30, 900);
+  // await basixProtocol.setRebaseTimingParameters(60, 30, 900);
 
   // BasixPool
   const basixPool = await BasixPool.at(BasixPool.address);
   await basixPool.initialize(
-    86400,
-    "1000000000000000000",
-    Math.floor(Date.now() / 1000),
+    259200, // 72 h
+    "200000000000000000000000",
+    Math.floor(Date.now() / 1000), // Now
     '0x680b96bd01ac9e50d1c80df8ba832f992e9e8707',
     BasixToken.address,
-    false
+    true
   );
 
   // BasixOracle

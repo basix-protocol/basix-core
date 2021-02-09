@@ -6,7 +6,7 @@
     | (_) )| | | |( )_) || | /'/\`\ 
     (____/'(_) (_)`\____)(_)(_)  (_)
 */
-pragma solidity 0.6.4;
+pragma solidity 0.6.5;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
@@ -42,19 +42,14 @@ contract BasixSale is ReentrancyGuard, Ownable {
     uint256 public totalCollected;
     uint256 totalSold;
     bool claimEnabled = false;
-    uint256 claimWaitTime = 2 days;
+    uint256 claimWaitTime = 30 days;
 
-
-    /**
-    800.000 for Sale 
-    Buy price: 500000000000000 wei | 0,0005 eth
-    */
     constructor(
         ERC20Burnable _token
     ) public {
         minimalGoal = 100000000000000000000; // 100 eth
-        hardCap = 400000000000000000000; // 400 eth
-        buyPrice = 500000000000000;
+        hardCap = 500000000000000000000; // 500 eth
+        buyPrice = 000500000000000000;
         crowdsaleToken = _token;
     }
 

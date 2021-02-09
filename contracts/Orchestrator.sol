@@ -83,7 +83,7 @@ contract Orchestrator is Ownable {
         // wait for `rebaseRequiredSupply` token supply to be rewarded until rebase is possible
         // timeout after 4 weeks if people don't claim rewards so it's not stuck
         uint256 rewardsDistributed = pool.totalRewards();
-        require(rewardsDistributed >= rebaseRequiredSupply || block.timestamp >= pool.starttime(), "Rebase not ready"); // TODO: Add + 1 days ???
+        require(rewardsDistributed >= rebaseRequiredSupply || block.timestamp >= pool.starttime() + 1 days, "Rebase not ready");
 
         policy.rebase();
 

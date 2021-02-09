@@ -25,7 +25,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 contract OracleSimple {
     using FixedPoint for *;
 
-    uint public PERIOD = 1 minutes; // TODO: change to 24 hours
+    uint public PERIOD = 24 hours;
 
     IUniswapV2Pair immutable pair;
     address public immutable token0;
@@ -91,7 +91,7 @@ contract BasixOracle is Ownable, OracleSimple, IOracle {
     address constant uniFactory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     constructor(address basix_, address susd_) public OracleSimple(uniFactory, basix_, susd_) {
-        PERIOD = 1 minutes; // TODO: change to 23 hours
+        PERIOD = 23 hours;
         basix = basix_;
     }
 
