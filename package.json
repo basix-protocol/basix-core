@@ -11,7 +11,8 @@
     "flatten-oracle": "truffle-flattener contracts/Oracle.sol > flatten/Oracle.sol",
     "flatten-orchestrator": "truffle-flattener contracts/Orchestrator.sol > flatten/Orchestrator.sol",
     "flatten-basixtoken": "truffle-flattener contracts/BasixToken.sol > flatten/BasixToken.sol",
-    "flatten-basixprotocol": "truffle-flattener contracts/BasixProtocol.sol > flatten/BasixProtocol.sol"
+    "flatten-basixprotocol": "truffle-flattener contracts/BasixProtocol.sol > flatten/BasixProtocol.sol",
+    "flatten-sale": "truffle-flattener contracts/Sale.sol > flatten/Sale.sol"
   },
   "repository": {
     "type": "git",

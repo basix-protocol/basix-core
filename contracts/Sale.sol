@@ -49,7 +49,7 @@ contract BasixSale is ReentrancyGuard, Ownable {
     ) public {
         minimalGoal = 100000000000000000000; // 100 eth
         hardCap = 500000000000000000000; // 500 eth
-        buyPrice = 000500000000000000;
+        buyPrice = 500000000000000;
         crowdsaleToken = _token;
     }
 

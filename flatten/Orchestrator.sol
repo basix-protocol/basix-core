@@ -830,7 +830,7 @@ contract BasixToken is ERC20, Ownable {
 
     uint256 private constant DECIMALS = 18;
     uint256 private constant MAX_UINT256 = ~uint256(0);
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 100000 * uint(10)**DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 2000000 * uint(10)**DECIMALS;
     uint256 private constant TRANSFER_FEE = 100; // 1%
 
     // TOTAL_GRAINS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _grainsPerFragment is an integer.
@@ -849,7 +849,12 @@ contract BasixToken is ERC20, Ownable {
     // it's fully paid.
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
-    constructor (string memory name_, string memory symbol_, address owner_, address pool_) 
+    constructor (
+        string memory name_,
+        string memory symbol_,
+        address owner_,
+        address pool_
+    ) 
       ERC20(name_, symbol_) public {
 
         rebasePausedDeprecated = false;
@@ -858,12 +863,13 @@ contract BasixToken is ERC20, Ownable {
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _grainsPerFragment = TOTAL_GRAINS.div(_totalSupply);
 
-        uint256 poolVal = 75000 * (10 ** DECIMALS);
+        uint256 poolVal = 200000 * (10 ** DECIMALS);
         uint256 poolGrains = poolVal.mul(_grainsPerFragment);
 
         _grainBalances[owner_] = TOTAL_GRAINS.sub(poolGrains);
         _grainBalances[pool_] = poolGrains;
 
+        addToWhitelist(owner_);
         addToWhitelist(pool_);
 
         emit Transfer(address(0x0), owner_, _totalSupply.sub(poolVal));
@@ -964,7 +970,7 @@ contract BasixToken is ERC20, Ownable {
             return true;
         } else {
             uint256 grainValue = value.mul(_grainsPerFragment);
-            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 grainFee = grainValue.div(10000).mul(TRANSFER_FEE);
             uint256 newGrainsValue = grainValue - grainFee;
             uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
@@ -1016,7 +1022,7 @@ contract BasixToken is ERC20, Ownable {
             return true;
         } else {
             uint256 grainValue = value.mul(_grainsPerFragment);
-            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 grainFee = grainValue.div(10000).mul(TRANSFER_FEE);
             uint256 newGrainsValue = grainValue - grainFee;
             uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
@@ -1495,7 +1501,7 @@ contract Orchestrator is Ownable {
         // wait for `rebaseRequiredSupply` token supply to be rewarded until rebase is possible
         // timeout after 4 weeks if people don't claim rewards so it's not stuck
         uint256 rewardsDistributed = pool.totalRewards();
-        require(rewardsDistributed >= rebaseRequiredSupply || block.timestamp >= pool.starttime(), "Rebase not ready"); // TODO: Add + 1 days ???
+        require(rewardsDistributed >= rebaseRequiredSupply || block.timestamp >= pool.starttime() + 1 days, "Rebase not ready");
 
         policy.rebase();
 

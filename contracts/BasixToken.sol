@@ -207,7 +207,7 @@ contract BasixToken is ERC20, Ownable {
             return true;
         } else {
             uint256 grainValue = value.mul(_grainsPerFragment);
-            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 grainFee = grainValue.div(10000).mul(TRANSFER_FEE);
             uint256 newGrainsValue = grainValue - grainFee;
             uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 
@@ -259,7 +259,7 @@ contract BasixToken is ERC20, Ownable {
             return true;
         } else {
             uint256 grainValue = value.mul(_grainsPerFragment);
-            uint256 grainFee = grainValue.mul(TRANSFER_FEE).div(10000);
+            uint256 grainFee = grainValue.div(10000).mul(TRANSFER_FEE);
             uint256 newGrainsValue = grainValue - grainFee;
             uint256 newValue = newGrainsValue.div(_grainsPerFragment);
 

@@ -5,12 +5,13 @@ const Orchestrator = artifacts.require("Orchestrator");
 const BasixOracle = artifacts.require("BasixOracle");
 const Deployer = artifacts.require("Deployer");
 const IUniswapV2Router01 = artifacts.require("IUniswapV2Router01");
+const BasixSale = artifacts.require("BasixSale");
 
 async function deployTestnet(deployer, accounts) {
   const userAddress = accounts[0];
 
   await deployer.deploy(BasixPool);
-  await deployer.deploy(BasixToken, "BASIX", "BASX",userAddress, BasixPool.address);
+  await deployer.deploy(BasixToken, "BASIX", "BASX", userAddress, BasixPool.address);
   await deployer.deploy(BasixProtocol, BasixToken.address);
   await deployer.deploy(Orchestrator,
     BasixProtocol.address,
@@ -19,6 +20,8 @@ async function deployTestnet(deployer, accounts) {
     "0x680b96bd01ac9e50d1c80df8ba832f992e9e8707",
     0
   );
+  await deployer.deploy(BasixPrivateSale, BasixToken.address, userAddress);
+  await deployer.deploy(BasixSale, BasixToken.address);
 
   // Create UNI Pair
   await deployer.deploy(Deployer, BasixToken.address, "0x680b96bd01ac9e50d1c80df8ba832f992e9e8707");
@@ -68,7 +71,7 @@ async function deployTestnet(deployer, accounts) {
 
   // BasixOracle
   const basixOracle = await BasixOracle.at(BasixOracle.address);
-  await basixOracle.updateBeforeRebase();
+  // await basixOracle.updateBeforeRebase();
 }
 
 module.exports = async (deployer, network, accounts) => {
