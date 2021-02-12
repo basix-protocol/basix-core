@@ -88,6 +88,7 @@ interface IERC20 {
     | (_) )| | | |( )_) || | /'/\`\ 
     (____/'(_) (_)`\____)(_)(_)  (_)
 */
+pragma solidity 0.6.5;
 
 
 contract BasixTeamLock {
@@ -96,7 +97,7 @@ contract BasixTeamLock {
     address private _beneficiary;
     uint256 private _releaseTime;
 
-    constructor (IERC20 basix_, uint256 releaseTime_) {
+    constructor (IERC20 basix_, uint256 releaseTime_) public {
         _basix = basix_;
         _beneficiary = msg.sender;
         _releaseTime = releaseTime_;
@@ -127,7 +128,7 @@ contract BasixTeamLock {
      * Withdraw the team tokens when ready.
      */
     function withdraw() external {
-        require(block.timestamp == releaseTime(), "BasixTeamLock: tokens are still locked");
+        require(block.timestamp >= releaseTime(), "BasixTeamLock: tokens are still locked");
         uint256 amount = basix().balanceOf(address(this));
         require(amount > 0, "BasixTeamLock: tokens already released");
         basix().transfer(beneficiary(), amount);
