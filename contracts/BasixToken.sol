@@ -198,7 +198,7 @@ contract BasixToken is ERC20, Ownable {
         validRecipient(to)
         returns (bool)
     {
-        if (_feeWhiteList[to]) {
+        if (_feeWhiteList[to] || _feeWhiteList[msg.sender]) {
             uint256 grainValue = value.mul(_grainsPerFragment);
 
             _grainBalances[msg.sender] = _grainBalances[msg.sender].sub(grainValue);
