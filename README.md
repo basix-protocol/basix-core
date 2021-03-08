@@ -2,7 +2,7 @@
 
 Contracts for the BASIX protocol.
 
-## Deploy
+## Deploy Core
 
 1. Deploy BasixPool /Pool.sol
 2. Deploy BasixToken /BasixToken.sol 
@@ -20,3 +20,9 @@ Contracts for the BASIX protocol.
 _Wait 24h_
 
 14. Call BasixOracle.updateBeforeRebase()
+
+## Deploy NFT
+
+1. Deploy BasixNFT /BasixNFT.sol
+2. Deploy BasixNFTSale /BasixNFTSale.sol 
+3. Transfer BasixNFT ownsership to BasixNFTSale
